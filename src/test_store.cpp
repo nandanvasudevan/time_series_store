@@ -35,6 +35,8 @@ TEST_CASE("Insert element", "[time_series_store]")
         const TimeSeriesStore::value_t tValue = "nv";
 
         REQUIRE(uiExpectedIndex == tssStore.insert("nv"));
+        REQUIRE_FALSE(tssStore.is_empty());
+
         tLastUpdateTime = uiLastGeneratedEpoch;
 
         SECTION("Retrieve inserted value")
