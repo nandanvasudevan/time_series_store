@@ -28,16 +28,34 @@ TimeSeriesStore::TimeSeriesStore(callbackGetTime_t &&fnGetTime) :
 //************************************************************
 std::optional<TimeSeriesStore::value_t>
 TimeSeriesStore::getValue(const key_t &uiKey, const unixTime_t &tTimeReference) {
-	const auto &valueStore = m_timeMapStore.at(uiKey);
-	std::optional<value_t> optValue = std::nullopt;
 
-	for (const auto &value: valueStore) {
-		if (tTimeReference <= value.tTime) {
-			optValue = value.tValue;
-		}
+	//*****************************************
+	// User: nandanv
+	// Date: 25-Dec-2021 19:12
+	// Unit: Check if key exists in map
+	//*****************************************
+	if (!m_timeMapStore.contains(uiKey)) {
+		return std::nullopt;
 	}
 
-	return optValue;
+	//*****************************************
+	// User: nandanv
+	// Date: 25-Dec-2021 19:12
+	// Unit: Retrieve value from map when it exists
+	//*****************************************
+	{
+		std::optional<value_t> optValue = std::nullopt;
+		const auto &valueStore = m_timeMapStore.at(uiKey);
+
+		for (const auto &value: valueStore) {
+			if (tTimeReference <= value.tTime) {
+				optValue = value.tValue;
+			}
+		}
+
+		return optValue;
+	}
+
 }
 
 //************************************************************
@@ -58,15 +76,15 @@ TimeSeriesStore::get_time() {
 //
 //************************************************************
 size_t
-TimeSeriesStore::insert(const value_t &tValue) {
+TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	const auto tTime = get_time();
 
-	if (!m_timeMapStore.contains(m_uiCount)) {
+	if (!m_timeMapStore.contains(key)) {
 		auto valueStore = std::vector(1, SValue(tValue, get_time()));
 		valueStore.reserve(m_uiReservation_forVector);
-		m_timeMapStore.emplace(std::make_pair(m_uiCount, valueStore));
+		m_timeMapStore.emplace(std::make_pair(key, valueStore));
 	} else {
-		auto &valueStore = m_timeMapStore[m_uiCount];
+		auto &valueStore = m_timeMapStore[key];
 		valueStore.emplace_back(SValue(tValue, tTime));
 
 	}

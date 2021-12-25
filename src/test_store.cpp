@@ -48,9 +48,10 @@ TEST_CASE("Insert element", "[time_series_store]")
 		TimeSeriesStore::unixTime_t tLastUpdateTime;
 
 		constexpr size_t uiExpectedIndex = 0;
+		const TimeSeriesStore::key_t tKey = 1;
 		const TimeSeriesStore::value_t tValue = "nv";
 
-		REQUIRE(uiExpectedIndex == tssStore.insert("nv"));
+		REQUIRE(uiExpectedIndex == tssStore.insert("nv", tKey));
 		REQUIRE_FALSE(tssStore.is_empty());
 
 		tLastUpdateTime = uiLastGeneratedEpoch;
@@ -58,7 +59,7 @@ TEST_CASE("Insert element", "[time_series_store]")
 		SECTION("Retrieve inserted value")
 		{
 			const TimeSeriesStore::value_t
-					tSetValue = tssStore.getValue(0, tLastUpdateTime).value_or("");
+					tSetValue = tssStore.getValue(tKey, tLastUpdateTime).value_or("");
 			REQUIRE(tValue == tSetValue);
 		}
 	}

@@ -48,9 +48,10 @@ public:
 	/**
 	 * @brief Insets a value into the next key
 	 * @param tValue Value to be inserted
+	 * @param key Key for insertion
 	 * @return Key used for insertion
 	 */
-	size_t insert(const value_t &tValue);
+	size_t insert(const value_t &tValue, const key_t &key);
 
 	//! @retval true Indicates the store is empty
 	[[nodiscard]] bool is_empty() const;
