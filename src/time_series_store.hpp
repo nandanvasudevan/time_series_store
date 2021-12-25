@@ -83,7 +83,6 @@ private:
 	} SValue;
 
 	using valueStore_t = std::vector<SValue>;
-	using uptr_valueStore_t = std::unique_ptr<valueStore_t *>;
 
 	//! Count of elements in the store
 	size_t m_uiCount;
@@ -97,7 +96,7 @@ private:
 	//! The store
 	std::map<key_t, valueStore_t> m_timeMapStore;
 
-	uptr_valueStore_t getStore_forKey(const key_t &key);
+	valueStore_t *getStore_forKey(const key_t &key);
 };
 
 #endif //TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP

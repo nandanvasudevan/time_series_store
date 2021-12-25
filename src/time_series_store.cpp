@@ -108,8 +108,8 @@ TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	// Unit: Insert into an existing vector
 	//*****************************************
 	{
-		(*store)->emplace_back(SValue(std::move(tValue), tTime));
-		return (*store)->size();
+		store->emplace_back(SValue(std::move(tValue), tTime));
+		return store->size();
 	}
 }
 
@@ -127,8 +127,8 @@ TimeSeriesStore::remove(const TimeSeriesStore::key_t &key,
 	if (!store) {
 		return false;
 	}
-	
-	bool bErased = !!std::erase_if(*(*store), [&](const auto &item) {
+
+	bool bErased = !!std::erase_if(*store, [&](const auto &item) {
 		if (item.tValue == value) {
 			return true;
 		}
@@ -152,7 +152,7 @@ TimeSeriesStore::get_count_for_key(const TimeSeriesStore::key_t &key) {
 		return false;
 	}
 
-	return (*store)->size();
+	return store->size();
 }
 
 //************************************************************
@@ -181,7 +181,7 @@ TimeSeriesStore::is_empty(const TimeSeriesStore::key_t &key) {
 		return false;
 	}
 
-	return (*store)->empty();
+	return store->empty();
 }
 
 //************************************************************
@@ -201,12 +201,12 @@ TimeSeriesStore::set_callback_unixTime(TimeSeriesStore::callbackGetTime_t &&fnCa
 // Comments:
 //  Returns the store for a given map.
 //************************************************************************************
-TimeSeriesStore::uptr_valueStore_t
+TimeSeriesStore::valueStore_t *
 TimeSeriesStore::getStore_forKey(const TimeSeriesStore::key_t &key) {
 
 	if (!m_timeMapStore.contains(key)) {
-		return uptr_valueStore_t(nullptr);
+		return nullptr;
 	}
 
-	return std::make_unique<valueStore_t *>(&m_timeMapStore[key]);
+	return &m_timeMapStore[key];
 }
