@@ -5,6 +5,7 @@
 // Created at: 23/12/2021 20:42
 //
 
+#include <cassert>
 #include "time_series_store.hpp"
 
 //************************************************************
@@ -18,6 +19,17 @@ TimeSeriesStore::TimeSeriesStore(callbackGetTime_t &&fnGetTime) :
 		m_uiReservation_forVector(0),
 		m_fnGetUnixTime(std::move(fnGetTime)) {
 
+}
+
+//************************************************************
+// Created by: nandanv
+// Created at: 23-Dec-2021 21:12
+// Comments:
+//
+//************************************************************
+size_t
+TimeSeriesStore::get_time() {
+	return m_fnGetUnixTime();
 }
 
 //************************************************************
@@ -44,29 +56,23 @@ TimeSeriesStore::getValue(const key_t &uiKey, const unixTime_t &tTimeReference) 
 	// Unit: Retrieve value from map when it exists
 	//*****************************************
 	{
-		std::optional<value_t> optValue = std::nullopt;
 		const auto &valueStore = m_timeMapStore.at(uiKey);
 
-		for (const auto &value: valueStore) {
-			if (tTimeReference <= value.tTime) {
-				optValue = value.tValue;
-			}
-		}
+		const auto &iResult = std::find_if(valueStore.rbegin(),
+		                                   valueStore.rend(),
+		                                   [&](const auto &item) {
+			                                   if (item.tTime <= tTimeReference) {
+				                                   return true;
+			                                   }
+			                                   return false;
+		                                   });
 
-		return optValue;
+		if (iResult != valueStore.rend()) {
+			return iResult->tValue;
+		}
 	}
 
-}
-
-//************************************************************
-// Created by: nandanv
-// Created at: 23-Dec-2021 21:12
-// Comments:
-//
-//************************************************************
-size_t
-TimeSeriesStore::get_time() {
-	return m_fnGetUnixTime();
+	return std::nullopt;
 }
 
 //************************************************************
@@ -79,17 +85,31 @@ size_t
 TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	const auto tTime = get_time();
 
+	//*****************************************
+	// User: nandanv
+	// Date: 25-Dec-2021 19:12
+	// Unit: Create a new vector and insert into it.
+	//          Always returns 1.
+	//*****************************************
 	if (!m_timeMapStore.contains(key)) {
 		auto valueStore = std::vector(1, SValue(tValue, get_time()));
 		valueStore.reserve(m_uiReservation_forVector);
 		m_timeMapStore.emplace(std::make_pair(key, valueStore));
-	} else {
-		auto &valueStore = m_timeMapStore[key];
-		valueStore.emplace_back(SValue(tValue, tTime));
 
+		assert(valueStore.size() == 1);
+		return valueStore.size();
 	}
 
-	return (m_uiCount++);
+	//*****************************************
+	// User: nandanv
+	// Date: 25-Dec-2021 19:12
+	// Unit: Insert into an existing vector
+	//*****************************************
+	{
+		auto &valueStore = m_timeMapStore[key];
+		valueStore.emplace_back(SValue(tValue, tTime));
+		return valueStore.size();
+	}
 }
 
 //************************************************************

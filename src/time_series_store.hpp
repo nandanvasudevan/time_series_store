@@ -13,6 +13,7 @@
 #include <map>
 #include <optional>
 #include <vector>
+#include <ostream>
 
 #ifndef TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
 #define TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
@@ -66,6 +67,11 @@ private:
 		SValue(const value_t &value, const unixTime_t &tInsertionTime) :
 				tValue(value),
 				tTime(tInsertionTime) {}
+
+		friend std::ostream &operator<<(std::ostream &os, const SValue &value) {
+			os << "[" << value.tTime << "]: " << "tValue: " << value.tValue << '\n';
+			return os;
+		}
 	} SValue;
 
 	//! Count of elements in the store
