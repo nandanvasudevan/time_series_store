@@ -30,6 +30,23 @@ getTime() {
 	return timeCount;
 }
 
+//************************************************************************************
+// Created by: nandanv
+// Created at: 25-Dec-2021 22:12
+// Comments:
+//
+//************************************************************************************
+auto
+insertElement(TimeSeriesStore &store,
+              const TimeSeriesStore::key_t &key,
+              const TimeSeriesStore::value_t &value) {
+	const auto uiCount = store.insert(value, key);
+	const auto insertionTime = uiLastGeneratedEpoch;
+
+	return std::make_pair(uiCount, insertionTime);
+}
+
+
 TEST_CASE("Initial condition", "[time_keyValue_store]")
 {
 	SECTION("Empty constructor")
@@ -45,30 +62,33 @@ TEST_CASE("Insert element", "[time_series_store]")
 {
 	SECTION("Insert a value") {
 		TimeSeriesStore tssStore(getTime);
-		TimeSeriesStore::unixTime_t tLastUpdateTime;
 
 		constexpr size_t uiExpectedCount = 1;
 		const TimeSeriesStore::key_t tKey = 1;
 		const TimeSeriesStore::value_t tInsertedValue = "nv";
 
-		REQUIRE(uiExpectedCount == tssStore.insert(tInsertedValue, tKey));
-		REQUIRE_FALSE(tssStore.is_empty());
+		const auto[countForKey, tLastUpdateTime] = insertElement(tssStore,
+		                                                         tKey,
+		                                                         tInsertedValue);
 
-		tLastUpdateTime = uiLastGeneratedEpoch;
+		REQUIRE(uiExpectedCount == countForKey);
+		REQUIRE_FALSE(tssStore.is_empty());
 
 		SECTION("Retrieve inserted value")
 		{
 			SECTION("At the insertion time instant")
 			{
 				const TimeSeriesStore::value_t
-						tSetValue = tssStore.getValue(tKey, tLastUpdateTime).value_or("");
+						tSetValue = tssStore.get_value(tKey,
+						                               tLastUpdateTime).value_or("");
 				REQUIRE(tInsertedValue == tSetValue);
 			}
 
 			SECTION("After the insertion time event")
 			{
 				const TimeSeriesStore::value_t
-						tSetValue = tssStore.getValue(tKey, tLastUpdateTime + 1).value_or(
+						tSetValue = tssStore.get_value(tKey,
+						                               tLastUpdateTime + 1).value_or(
 						"");
 				REQUIRE(tInsertedValue == tSetValue);
 			}
@@ -87,12 +107,37 @@ TEST_CASE("Insert element", "[time_series_store]")
 			SECTION("Retrieve inserted values")
 			{
 				REQUIRE(tInsertedValue ==
-				        tssStore.getValue(tKey, tInsertionTime - 1).value_or(""));
+				        tssStore.get_value(tKey, tInsertionTime - 1).value_or(""));
 				REQUIRE(tInsertedValue_second ==
-				        tssStore.getValue(tKey, tInsertionTime).value_or(""));
+				        tssStore.get_value(tKey, tInsertionTime).value_or(""));
 				REQUIRE(tInsertedValue_second ==
-				        tssStore.getValue(tKey, tInsertionTime + 1).value_or(""));
+				        tssStore.get_value(tKey, tInsertionTime + 1).value_or(""));
 			}
+		}
+	}
+}
+
+TEST_CASE("Remove element", "[time_series_store]")
+{
+	SECTION("Insert an element")
+	{
+		TimeSeriesStore tssStore(getTime);
+
+		constexpr size_t uiExpectedCount = 1;
+		const TimeSeriesStore::key_t tKey = 1;
+		const TimeSeriesStore::value_t tInsertedValue = "nv";
+
+		const auto[countForKey, tInsertionTime] = insertElement(tssStore,
+		                                                        tKey,
+		                                                        tInsertedValue);
+
+		REQUIRE(uiExpectedCount == countForKey);
+
+		SECTION("Remove the inserted element")
+		{
+			REQUIRE(tssStore.remove(tKey, tInsertedValue));
+			REQUIRE((uiExpectedCount - 1) == tssStore.get_count_for_key(tKey));
+			REQUIRE(tssStore.is_empty(tKey));
 		}
 	}
 }

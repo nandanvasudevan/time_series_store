@@ -14,6 +14,7 @@
 #include <optional>
 #include <vector>
 #include <ostream>
+#include <memory>
 
 #ifndef TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
 #define TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
@@ -41,7 +42,8 @@ public:
 	 * @param tTimeReference Latest value before this time instance
 	 * @return Value if found, else std::nullopt
 	 */
-	std::optional<value_t> getValue(const key_t &uiKey, const unixTime_t &tTimeReference);
+	std::optional<value_t>
+	get_value(const key_t &uiKey, const unixTime_t &tTimeReference);
 
 	//! Gets the latest time
 	size_t get_time();
@@ -54,8 +56,14 @@ public:
 	 */
 	size_t insert(const value_t &tValue, const key_t &key);
 
+	bool remove(const key_t &key, const value_t &value);
+
+	[[nodiscard]] size_t get_count_for_key(const key_t &key);
+
 	//! @retval true Indicates the store is empty
 	[[nodiscard]] bool is_empty() const;
+
+	[[nodiscard]] bool is_empty(const key_t &key);
 
 private:
 	//! Holds a value and it's time of insertion
@@ -64,7 +72,7 @@ private:
 		unixTime_t tTime;
 
 		//! Create a new 'value'
-		SValue(const value_t &value, const unixTime_t &tInsertionTime) :
+		SValue(const value_t &&value, const unixTime_t &tInsertionTime) :
 				tValue(value),
 				tTime(tInsertionTime) {}
 
@@ -73,6 +81,9 @@ private:
 			return os;
 		}
 	} SValue;
+
+	using valueStore_t = std::vector<SValue>;
+	using uptr_valueStore_t = std::unique_ptr<valueStore_t *>;
 
 	//! Count of elements in the store
 	size_t m_uiCount;
@@ -84,7 +95,9 @@ private:
 	std::function<size_t(void)> m_fnGetUnixTime;
 
 	//! The store
-	std::map<key_t, std::vector<SValue>> m_timeMapStore;
+	std::map<key_t, valueStore_t> m_timeMapStore;
+
+	uptr_valueStore_t getStore_forKey(const key_t &key);
 };
 
 #endif //TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP

@@ -6,6 +6,7 @@
 //
 
 #include <cassert>
+#include <iostream>
 #include "time_series_store.hpp"
 
 //************************************************************
@@ -39,7 +40,7 @@ TimeSeriesStore::get_time() {
 //
 //************************************************************
 std::optional<TimeSeriesStore::value_t>
-TimeSeriesStore::getValue(const key_t &uiKey, const unixTime_t &tTimeReference) {
+TimeSeriesStore::get_value(const key_t &uiKey, const unixTime_t &tTimeReference) {
 
 	//*****************************************
 	// User: nandanv
@@ -84,6 +85,7 @@ TimeSeriesStore::getValue(const key_t &uiKey, const unixTime_t &tTimeReference) 
 size_t
 TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	const auto tTime = get_time();
+	auto store = getStore_forKey(key);
 
 	//*****************************************
 	// User: nandanv
@@ -91,8 +93,8 @@ TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	// Unit: Create a new vector and insert into it.
 	//          Always returns 1.
 	//*****************************************
-	if (!m_timeMapStore.contains(key)) {
-		auto valueStore = std::vector(1, SValue(tValue, get_time()));
+	if (!store) {
+		auto valueStore = std::vector(1, SValue(std::move(tValue), get_time()));
 		valueStore.reserve(m_uiReservation_forVector);
 		m_timeMapStore.emplace(std::make_pair(key, valueStore));
 
@@ -106,10 +108,51 @@ TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
 	// Unit: Insert into an existing vector
 	//*****************************************
 	{
-		auto &valueStore = m_timeMapStore[key];
-		valueStore.emplace_back(SValue(tValue, tTime));
-		return valueStore.size();
+		(*store)->emplace_back(SValue(std::move(tValue), tTime));
+		return (*store)->size();
 	}
+}
+
+//************************************************************************************
+// Created by: nandanv
+// Created at: 25-Dec-2021 23:12
+// Comments:
+//
+//************************************************************************************
+bool
+TimeSeriesStore::remove(const TimeSeriesStore::key_t &key,
+                        const TimeSeriesStore::value_t &value) {
+	const auto store = getStore_forKey(key);
+
+	if (!store) {
+		return false;
+	}
+	
+	bool bErased = !!std::erase_if(*(*store), [&](const auto &item) {
+		if (item.tValue == value) {
+			return true;
+		}
+		return false;
+	});
+
+	return bErased;
+}
+
+//************************************************************************************
+// Created by: nandanv
+// Created at: 25-Dec-2021 23:12
+// Comments:
+//
+//************************************************************************************
+size_t
+TimeSeriesStore::get_count_for_key(const TimeSeriesStore::key_t &key) {
+	const auto store = getStore_forKey(key);
+
+	if (!store) {
+		return false;
+	}
+
+	return (*store)->size();
 }
 
 //************************************************************
@@ -123,6 +166,24 @@ TimeSeriesStore::is_empty() const {
 	return m_timeMapStore.empty();
 }
 
+//************************************************************************************
+// Created by: nandanv
+// Created at: 25-Dec-2021 23:12
+// Comments:
+//
+//************************************************************************************
+bool
+TimeSeriesStore::is_empty(const TimeSeriesStore::key_t &key) {
+
+	const auto store = getStore_forKey(key);
+
+	if (!store) {
+		return false;
+	}
+
+	return (*store)->empty();
+}
+
 //************************************************************
 // Created by: nandanv
 // Created at: 23-Dec-2021 21:12
@@ -134,3 +195,18 @@ TimeSeriesStore::set_callback_unixTime(TimeSeriesStore::callbackGetTime_t &&fnCa
 	m_fnGetUnixTime = std::move(fnCallback);
 }
 
+//************************************************************************************
+// Created by: nandanv
+// Created at: 25-Dec-2021 22:12
+// Comments:
+//  Returns the store for a given map.
+//************************************************************************************
+TimeSeriesStore::uptr_valueStore_t
+TimeSeriesStore::getStore_forKey(const TimeSeriesStore::key_t &key) {
+
+	if (!m_timeMapStore.contains(key)) {
+		return uptr_valueStore_t(nullptr);
+	}
+
+	return std::make_unique<valueStore_t *>(&m_timeMapStore[key]);
+}
