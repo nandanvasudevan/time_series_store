@@ -201,17 +201,20 @@ TimeSeriesStore::set_callback_unixTime(TimeSeriesStore::callbackGetTime_t &&fnCa
 // Comments:
 //  Returns the store for a given map.
 //************************************************************************************
-TimeSeriesStore::valueStore_t *
+std::experimental::fundamentals_v2::observer_ptr<TimeSeriesStore::valueStore_t>
 TimeSeriesStore::getStore_forKey(const TimeSeriesStore::key_t &key) {
 
 	//*****************************************
 	// User: nandanv
 	// Date: 26-Dec-2021 09:12
 	// Unit: Return nullptr if the element does not exist
+	//  Based on: https://godbolt.org/z/nn3Ecq69a
 	//*****************************************
 	if (!m_timeMapStore.contains(key)) {
-		return nullptr;
+		return std::experimental::make_observer<TimeSeriesStore::valueStore_t>(nullptr);
 	}
 
-	return &m_timeMapStore[key];
+	return std::experimental::make_observer<TimeSeriesStore::valueStore_t>(
+			&m_timeMapStore.at(
+					key));
 }

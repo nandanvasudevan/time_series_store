@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <experimental/memory>
 #include <functional>
 #include <string>
 #include <map>
@@ -96,7 +97,8 @@ private:
 	//! The store
 	std::map<key_t, valueStore_t> m_timeMapStore;
 
-	valueStore_t *getStore_forKey(const key_t &key);
+	std::experimental::fundamentals_v2::observer_ptr<TimeSeriesStore::valueStore_t>
+	getStore_forKey(const key_t &key);
 };
 
 #endif //TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
