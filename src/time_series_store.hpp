@@ -54,7 +54,7 @@ public:
 	 * @param key Key for insertion
 	 * @return Key used for insertion
 	 */
-	size_t insert(const value_t &tValue, const key_t &key);
+	size_t insert(const key_t &key, const value_t &tValue);
 
 	bool remove(const key_t &key, const value_t &value);
 

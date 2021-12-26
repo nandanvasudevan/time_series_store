@@ -40,7 +40,7 @@ auto
 insertElement(TimeSeriesStore &store,
               const TimeSeriesStore::key_t &key,
               const TimeSeriesStore::value_t &value) {
-	const auto uiCount = store.insert(value, key);
+	const auto uiCount = store.insert(key, value);
 	const auto insertionTime = uiLastGeneratedEpoch;
 
 	return std::make_pair(uiCount, insertionTime);
@@ -55,6 +55,7 @@ TEST_CASE("Initial condition", "[time_keyValue_store]")
 
 		REQUIRE(tssTest.is_empty());
 		REQUIRE(tssTest.get_time());
+		REQUIRE(tssTest.is_empty(5));
 	}
 }
 
@@ -99,7 +100,7 @@ TEST_CASE("Insert element", "[time_series_store]")
 			constexpr size_t uiExpectedCount_afterSecond = uiExpectedCount + 1;
 			const TimeSeriesStore::value_t tInsertedValue_second = "ab";
 
-			const size_t uiCount = tssStore.insert(tInsertedValue_second, tKey);
+			const size_t uiCount = tssStore.insert(tKey, tInsertedValue_second);
 			const TimeSeriesStore::unixTime_t tInsertionTime = uiLastGeneratedEpoch;
 
 			REQUIRE(uiExpectedCount_afterSecond == uiCount);
@@ -139,5 +140,37 @@ TEST_CASE("Remove element", "[time_series_store]")
 			REQUIRE((uiExpectedCount - 1) == tssStore.get_count_for_key(tKey));
 			REQUIRE(tssStore.is_empty(tKey));
 		}
+
+		SECTION("Remove non-existent element from existing key")
+		{
+			REQUIRE_FALSE(tssStore.remove(tKey, tInsertedValue + "s"));
+		}
+	}
+
+	SECTION("Attempt to remove from non-existent key")
+	{
+		TimeSeriesStore tssStore(getTime);
+
+		REQUIRE_FALSE(tssStore.remove(0, ""));
 	}
 }
+
+#ifdef TEST_ENABLE_BENCHMARKING
+TEST_CASE("Benchmarks")
+{
+	TimeSeriesStore tssStore(getTime);
+	BENCHMARK("Element insertion")
+				{
+					return tssStore.insert(0, "");
+				};
+
+	SECTION("Removing an element")
+	{
+		tssStore.insert(0, "");
+		BENCHMARK("Element deletion")
+					{
+						return tssStore.remove(0, "");
+					};
+	}
+}
+#endif // TEST_ENABLE_BENCHMARKING

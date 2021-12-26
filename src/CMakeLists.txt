@@ -25,5 +25,10 @@ set(TEST_SRC test_store.cpp time_series_store.cpp)
 
 add_executable(tests ${TEST_SRC})
 target_link_libraries(tests PRIVATE catch2Main catch2)
+
+add_executable(tests_benchmark ${TEST_SRC})
+target_link_libraries(tests_benchmark PRIVATE catch2Main catch2)
+set_target_properties(tests_benchmark PROPERTIES COMPILE_DEFINITIONS "TEST_ENABLE_BENCHMARKING")
+
 # Set property for my_target only
 set_property(TARGET tests PROPERTY RULE_LAUNCH_COMPILE "${CMAKE_COMMAND} -E time")

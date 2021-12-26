@@ -83,7 +83,7 @@ TimeSeriesStore::get_value(const key_t &uiKey, const unixTime_t &tTimeReference)
 //
 //************************************************************
 size_t
-TimeSeriesStore::insert(const value_t &tValue, const key_t &key) {
+TimeSeriesStore::insert(const key_t &key, const value_t &tValue) {
 	const auto tTime = get_time();
 	auto store = getStore_forKey(key);
 
@@ -149,7 +149,7 @@ TimeSeriesStore::get_count_for_key(const TimeSeriesStore::key_t &key) {
 	const auto store = getStore_forKey(key);
 
 	if (!store) {
-		return false;
+		return 0;
 	}
 
 	return store->size();
@@ -178,7 +178,7 @@ TimeSeriesStore::is_empty(const TimeSeriesStore::key_t &key) {
 	const auto store = getStore_forKey(key);
 
 	if (!store) {
-		return false;
+		return true;
 	}
 
 	return store->empty();
@@ -204,6 +204,11 @@ TimeSeriesStore::set_callback_unixTime(TimeSeriesStore::callbackGetTime_t &&fnCa
 TimeSeriesStore::valueStore_t *
 TimeSeriesStore::getStore_forKey(const TimeSeriesStore::key_t &key) {
 
+	//*****************************************
+	// User: nandanv
+	// Date: 26-Dec-2021 09:12
+	// Unit: Return nullptr if the element does not exist
+	//*****************************************
 	if (!m_timeMapStore.contains(key)) {
 		return nullptr;
 	}
