@@ -6,7 +6,6 @@
 //
 
 #include <cassert>
-#include <iostream>
 #include "time_series_store.hpp"
 
 //************************************************************
@@ -108,8 +107,8 @@ TimeSeriesStore::insert(const key_t &key, const value_t &tValue) {
 	// Unit: Insert into an existing vector
 	//*****************************************
 	{
-		store->emplace_back(SValue(std::move(tValue), tTime));
-		return store->size();
+		store->get().emplace_back(SValue(std::move(tValue), tTime));
+		return store->get().size();
 	}
 }
 
@@ -128,7 +127,7 @@ TimeSeriesStore::remove(const TimeSeriesStore::key_t &key,
 		return false;
 	}
 
-	bool bErased = !!std::erase_if(*store, [&](const auto &item) {
+	bool bErased = !!std::erase_if(store->get(), [&](const auto &item) {
 		if (item.tValue == value) {
 			return true;
 		}
@@ -152,7 +151,7 @@ TimeSeriesStore::get_count_for_key(const TimeSeriesStore::key_t &key) {
 		return 0;
 	}
 
-	return store->size();
+	return store->get().size();
 }
 
 //************************************************************
@@ -181,7 +180,7 @@ TimeSeriesStore::is_empty(const TimeSeriesStore::key_t &key) {
 		return true;
 	}
 
-	return store->empty();
+	return store->get().empty();
 }
 
 //************************************************************
@@ -201,20 +200,14 @@ TimeSeriesStore::set_callback_unixTime(TimeSeriesStore::callbackGetTime_t &&fnCa
 // Comments:
 //  Returns the store for a given map.
 //************************************************************************************
-std::experimental::fundamentals_v2::observer_ptr<TimeSeriesStore::valueStore_t>
+std::optional<TimeSeriesStore::refValueStore_t>
 TimeSeriesStore::getStore_forKey(const TimeSeriesStore::key_t &key) {
 
-	//*****************************************
-	// User: nandanv
-	// Date: 26-Dec-2021 09:12
-	// Unit: Return nullptr if the element does not exist
-	//  Based on: https://godbolt.org/z/nn3Ecq69a
-	//*****************************************
 	if (!m_timeMapStore.contains(key)) {
-		return std::experimental::make_observer<TimeSeriesStore::valueStore_t>(nullptr);
+		return std::optional<refValueStore_t>(std::nullopt);
 	}
 
-	return std::experimental::make_observer<TimeSeriesStore::valueStore_t>(
-			&m_timeMapStore.at(
-					key));
+	return std::optional<refValueStore_t>(
+			std::reference_wrapper<valueStore_t>(m_timeMapStore.at(
+					key)));
 }

@@ -7,15 +7,12 @@
 
 
 #include <cstdint>
-#include <cstddef>
-#include <experimental/memory>
 #include <functional>
 #include <string>
 #include <map>
 #include <optional>
 #include <vector>
 #include <ostream>
-#include <memory>
 
 #ifndef TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
 #define TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
@@ -84,6 +81,7 @@ private:
 	} SValue;
 
 	using valueStore_t = std::vector<SValue>;
+	using refValueStore_t = std::reference_wrapper<valueStore_t>;
 
 	//! Count of elements in the store
 	size_t m_uiCount;
@@ -97,8 +95,7 @@ private:
 	//! The store
 	std::map<key_t, valueStore_t> m_timeMapStore;
 
-	std::experimental::fundamentals_v2::observer_ptr<TimeSeriesStore::valueStore_t>
-	getStore_forKey(const key_t &key);
+	std::optional<refValueStore_t> getStore_forKey(const key_t &key);
 };
 
 #endif //TIME_BASED_KEYVALUE_STORE_TIME_SERIES_STORE_HPP
